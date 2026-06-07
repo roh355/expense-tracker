@@ -1,0 +1,242 @@
+:root,
+[data-theme='light'] {
+  --bg: #eef1f6;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --border: #d4dae5;
+  --border-strong: #b8c0d0;
+  --text: #0f1419;
+  --muted: #5c6678;
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
+  --accent-soft: #eef2ff;
+  --expense: #c81e1e;
+  --income: #15803d;
+  --input-bg: #f8fafc;
+  --input-border: #cdd5e0;
+  --input-focus: #4338ca;
+  --shadow: rgba(15, 20, 25, 0.06);
+  --shadow-md: rgba(15, 20, 25, 0.1);
+  --radius: 6px;
+  --radius-sm: 4px;
+}
+
+[data-theme='dark'] {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface-raised: #222633;
+  --border: #2a2f3d;
+  --border-strong: #3d4455;
+  --text: #e8eaef;
+  --muted: #9ca3af;
+  --accent: #818cf8;
+  --accent-hover: #a5b4fc;
+  --accent-soft: rgba(129, 140, 248, 0.12);
+  --expense: #f87171;
+  --income: #4ade80;
+  --input-bg: #141720;
+  --input-border: #2a2f3d;
+  --input-focus: #818cf8;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-md: rgba(0, 0, 0, 0.45);
+  --radius: 6px;
+  --radius-sm: 4px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* Shared form primitives */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field-input,
+.field-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field-input:focus,
+.field-select:focus {
+  border-color: var(--input-focus);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field-input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg);
+  border-color: var(--border-strong);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.segmented {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--input-bg);
+}
+
+.segmented button {
+  flex: 1;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.segmented button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.form-error {
+  margin: 0;
+  font-size: 11px;
+  color: var(--expense);
+}
+
+/* Sharp dialog overlay */
+.sharp-dialog .mat-mdc-dialog-surface {
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px var(--shadow-md) !important;
+  background: var(--surface) !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  color: var(--text) !important;
+}
+
+.sharp-dialog .mdc-dialog__content,
+.sharp-dialog .mat-mdc-dialog-content {
+  padding: 0 !important;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.sharp-dialog .btn,
+.sharp-dialog .btn-primary,
+.sharp-dialog .btn-ghost {
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sharp-dialog .btn-primary {
+  color: #fff !important;
+}
+
+.sharp-dialog .field-select,
+.sharp-dialog .field-input {
+  width: 100%;
+  pointer-events: auto;
+}
+
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-color: var(--surface);
+  --mdc-snackbar-supporting-text-color: var(--text);
+}
