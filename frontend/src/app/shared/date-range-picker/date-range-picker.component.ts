@@ -2,13 +2,16 @@ import {
   Component,
   ElementRef,
   HostListener,
+  ViewChild,
   input,
   output,
   signal,
   computed,
+  effect,
 } from '@angular/core';
 import { LucideCalendar, LucideChevronLeft, LucideChevronRight } from '@lucide/angular';
 import { formatDateLocal } from '../../core/utils/dates';
+import { positionCalendarPanel } from '../calendar/calendar-overlay';
 
 export interface DateRange {
   from: string;
@@ -25,58 +28,58 @@ interface Preset {
   standalone: true,
   imports: [LucideCalendar, LucideChevronLeft, LucideChevronRight],
   template: `
-    <div class="picker">
-      <button type="button" class="trigger" (click)="toggle()">
+    <div class="calendar-picker">
+      <button #trigger type="button" class="calendar-picker__trigger" (click)="toggle()">
         <svg lucideCalendar [size]="14"></svg>
-        <span class="trigger-text">{{ displayLabel() }}</span>
+        <span class="calendar-picker__trigger-text">{{ displayLabel() }}</span>
       </button>
 
       @if (open()) {
-        <div class="panel">
-          <div class="presets">
+        <div #panel class="calendar-picker__panel">
+          <div class="calendar-picker__presets">
             @for (p of presets; track p.label) {
-              <button type="button" class="preset" (click)="applyPreset(p)">{{ p.label }}</button>
+              <button type="button" class="calendar-picker__preset" (click)="applyPreset(p)">{{ p.label }}</button>
             }
           </div>
 
-          <div class="cal-header">
-            <button type="button" class="nav-btn" (click)="prevMonth()">
+          <div class="calendar-picker__header">
+            <button type="button" class="calendar-picker__nav" (click)="prevMonth()">
               <svg lucideChevronLeft [size]="14"></svg>
             </button>
-            <span class="month-label">{{ monthLabel() }}</span>
-            <button type="button" class="nav-btn" (click)="nextMonth()">
+            <span class="calendar-picker__month">{{ monthLabel() }}</span>
+            <button type="button" class="calendar-picker__nav" (click)="nextMonth()">
               <svg lucideChevronRight [size]="14"></svg>
             </button>
           </div>
 
-          <div class="weekdays">
+          <div class="calendar-picker__weekdays">
             @for (d of weekdays; track d) {
               <span>{{ d }}</span>
             }
           </div>
 
-          <div class="grid">
+          <div class="calendar-picker__grid">
             @for (cell of calendarCells(); track cell.key) {
               @if (cell.day === 0) {
-                <span class="cell empty"></span>
+                <span class="calendar-picker__cell calendar-picker__cell--empty"></span>
               } @else {
                 <button
                   type="button"
-                  class="cell"
-                  [class.other-month]="!cell.inMonth"
-                  [class.in-range]="cell.inRange"
-                  [class.range-start]="cell.isStart"
-                  [class.range-end]="cell.isEnd"
-                  [class.today]="cell.isToday"
+                  class="calendar-picker__cell"
+                  [class.calendar-picker__cell--other-month]="!cell.inMonth"
+                  [class.calendar-picker__cell--in-range]="cell.inRange"
+                  [class.calendar-picker__cell--range-start]="cell.isStart"
+                  [class.calendar-picker__cell--range-end]="cell.isEnd"
+                  [class.calendar-picker__cell--today]="cell.isToday"
                   (click)="pickDate(cell.dateStr)"
                 >{{ cell.day }}</button>
               }
             }
           </div>
 
-          <div class="panel-footer">
-            <span class="hint">{{ pickHint() }}</span>
-            <div class="footer-actions">
+          <div class="calendar-picker__footer">
+            <span class="calendar-picker__hint">{{ pickHint() }}</span>
+            <div class="calendar-picker__footer-actions">
               <button type="button" class="btn btn-ghost" (click)="clear()">Clear</button>
               <button type="button" class="btn btn-primary" [disabled]="!draftFrom()" (click)="apply()">
                 Apply
@@ -88,162 +91,15 @@ interface Preset {
     </div>
   `,
   styles: `
-    .picker {
-      position: relative;
-    }
-    .trigger {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 34px;
-      padding: 0 10px;
-      border: 1px solid var(--input-border);
-      border-radius: var(--radius-sm);
-      background: var(--input-bg);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      white-space: nowrap;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .trigger:hover {
-      border-color: var(--border-strong);
-    }
-    .trigger-text {
+    .calendar-picker__trigger-text {
       max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .panel {
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      z-index: 50;
-      width: 300px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: 0 12px 36px var(--shadow-md);
-      padding: 12px;
-    }
-    .presets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 10px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-    .preset {
-      padding: 4px 8px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--input-bg);
-      color: var(--muted);
-      font-size: 10px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .preset:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .cal-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .month-label {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-    .nav-btn {
-      width: 28px;
-      height: 28px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      background: var(--input-bg);
-      color: var(--text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .weekdays {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-      margin-bottom: 4px;
-    }
-    .weekdays span {
-      text-align: center;
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--muted);
-      padding: 2px 0;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 2px;
-    }
-    .cell {
-      height: 32px;
-      border: none;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--text);
-      font-size: 11px;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .cell.empty {
-      cursor: default;
-    }
-    .cell.other-month {
-      color: var(--muted);
-      opacity: 0.45;
-    }
-    .cell:hover:not(.empty) {
-      background: var(--accent-soft);
-    }
-    .cell.in-range {
-      background: var(--accent-soft);
-      border-radius: 0;
-    }
-    .cell.range-start,
-    .cell.range-end {
-      background: var(--accent);
-      color: #fff;
-      border-radius: var(--radius-sm);
-    }
-    .cell.today:not(.range-start):not(.range-end) {
-      outline: 1px solid var(--accent);
-      outline-offset: -1px;
-    }
-    .panel-footer {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .hint {
-      font-size: 10px;
-      color: var(--muted);
-    }
-    .footer-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 6px;
     }
   `,
 })
 export class DateRangePickerComponent {
+  @ViewChild('trigger') triggerRef!: ElementRef<HTMLButtonElement>;
+  @ViewChild('panel') panelRef?: ElementRef<HTMLDivElement>;
+
   from = input.required<string>();
   to = input.required<string>();
   rangeChange = output<DateRange>();
@@ -351,13 +207,31 @@ export class DateRangePickerComponent {
     return cells;
   });
 
-  constructor(private el: ElementRef) {}
+  constructor(private el: ElementRef) {
+    effect(() => {
+      if (this.open()) {
+        requestAnimationFrame(() => this.repositionPanel());
+      }
+    });
+  }
 
   @HostListener('document:click', ['$event'])
   onDocClick(e: MouseEvent): void {
     if (!this.el.nativeElement.contains(e.target)) {
       this.open.set(false);
     }
+  }
+
+  @HostListener('window:scroll')
+  @HostListener('window:resize')
+  onViewportChange(): void {
+    if (this.open()) this.repositionPanel();
+  }
+
+  private repositionPanel(): void {
+    const panel = this.panelRef?.nativeElement;
+    if (!panel) return;
+    positionCalendarPanel(this.triggerRef.nativeElement, panel);
   }
 
   toggle(): void {
@@ -435,6 +309,7 @@ export class DateRangePickerComponent {
     } else {
       this.viewMonth.update((m) => m - 1);
     }
+    requestAnimationFrame(() => this.repositionPanel());
   }
 
   nextMonth(): void {
@@ -444,6 +319,7 @@ export class DateRangePickerComponent {
     } else {
       this.viewMonth.update((m) => m + 1);
     }
+    requestAnimationFrame(() => this.repositionPanel());
   }
 
   private fmt(iso: string): string {

@@ -4,7 +4,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { LucideChevronDown, LucideChevronRight, LucidePlus, LucideTrash2 } from '@lucide/angular';
 import { Category, TransactionType, UserConfig } from '../../core/models';
 import { ConfigService } from '../../core/services/config.service';
+import { SessionStateService } from '../../core/services/session-state.service';
 import { randomUUID } from '../../core/utils/uuid';
+
+interface SettingsUiState {
+  expenseOpen: boolean;
+  incomeOpen: boolean;
+}
 
 @Component({
   selector: 'app-settings',
@@ -20,71 +26,75 @@ import { randomUUID } from '../../core/utils/uuid';
     <div class="settings">
       <h2>Settings</h2>
 
-      <section class="section">
-        <h3>Monthly Budget</h3>
-        <div class="budget-row">
-          <input class="field-input" type="number" [(ngModel)]="budgetInput" placeholder="Amount in ₹" min="0" />
-          <button class="btn btn-primary" (click)="saveBudget()">Save</button>
-          <button class="btn" (click)="clearBudget()">Clear</button>
-        </div>
-      </section>
+      <div class="categories-grid">
+        <section class="section">
+          <button type="button" class="collapse-header" (click)="toggleExpenseOpen()">
+            @if (uiState().expenseOpen) { <svg lucideChevronDown [size]="16"></svg> }
+            @else { <svg lucideChevronRight [size]="16"></svg> }
+            Expense Categories
+          </button>
+          @if (uiState().expenseOpen) {
+            <div class="cat-list">
+              @for (cat of expenseCategories(); track cat.id) {
+                <div class="cat-row">
+                  <span class="dot" [style.background]="cat.color"></span>
+                  <input class="field-input" [(ngModel)]="cat.name" />
+                  <input type="color" [(ngModel)]="cat.color" class="color-input" />
+                  <button type="button" class="icon-btn" (click)="removeCategory(cat.id, 'EXPENSE')" [disabled]="expenseCategories().length <= 1">
+                    <svg lucideTrash2 [size]="14"></svg>
+                  </button>
+                </div>
+              }
+              <button type="button" class="add-btn" (click)="addCategory('EXPENSE')">
+                <svg lucidePlus [size]="14"></svg> Add category
+              </button>
+            </div>
+          }
+        </section>
 
-      <section class="section">
-        <button type="button" class="collapse-header" (click)="expenseOpen = !expenseOpen">
-          @if (expenseOpen) { <svg lucideChevronDown [size]="16"></svg> }
-          @else { <svg lucideChevronRight [size]="16"></svg> }
-          Expense Categories
-        </button>
-        @if (expenseOpen) {
-          <div class="cat-list">
-            @for (cat of expenseCategories(); track cat.id) {
-              <div class="cat-row">
-                <span class="dot" [style.background]="cat.color"></span>
-                <input class="field-input" [(ngModel)]="cat.name" />
-                <input type="color" [(ngModel)]="cat.color" class="color-input" />
-                <button type="button" class="icon-btn" (click)="removeCategory(cat.id, 'EXPENSE')" [disabled]="expenseCategories().length <= 1">
-                  <svg lucideTrash2 [size]="14"></svg>
-                </button>
-              </div>
-            }
-            <button type="button" class="add-btn" (click)="addCategory('EXPENSE')">
-              <svg lucidePlus [size]="14"></svg> Add category
-            </button>
-          </div>
-        }
-      </section>
-
-      <section class="section">
-        <button type="button" class="collapse-header" (click)="incomeOpen = !incomeOpen">
-          @if (incomeOpen) { <svg lucideChevronDown [size]="16"></svg> }
-          @else { <svg lucideChevronRight [size]="16"></svg> }
-          Income Categories
-        </button>
-        @if (incomeOpen) {
-          <div class="cat-list">
-            @for (cat of incomeCategories(); track cat.id) {
-              <div class="cat-row">
-                <span class="dot" [style.background]="cat.color"></span>
-                <input class="field-input" [(ngModel)]="cat.name" />
-                <input type="color" [(ngModel)]="cat.color" class="color-input" />
-                <button type="button" class="icon-btn" (click)="removeCategory(cat.id, 'INCOME')" [disabled]="incomeCategories().length <= 1">
-                  <svg lucideTrash2 [size]="14"></svg>
-                </button>
-              </div>
-            }
-            <button type="button" class="add-btn" (click)="addCategory('INCOME')">
-              <svg lucidePlus [size]="14"></svg> Add category
-            </button>
-          </div>
-        }
-      </section>
+        <section class="section">
+          <button type="button" class="collapse-header" (click)="toggleIncomeOpen()">
+            @if (uiState().incomeOpen) { <svg lucideChevronDown [size]="16"></svg> }
+            @else { <svg lucideChevronRight [size]="16"></svg> }
+            Income Categories
+          </button>
+          @if (uiState().incomeOpen) {
+            <div class="cat-list">
+              @for (cat of incomeCategories(); track cat.id) {
+                <div class="cat-row">
+                  <span class="dot" [style.background]="cat.color"></span>
+                  <input class="field-input" [(ngModel)]="cat.name" />
+                  <input type="color" [(ngModel)]="cat.color" class="color-input" />
+                  <button type="button" class="icon-btn" (click)="removeCategory(cat.id, 'INCOME')" [disabled]="incomeCategories().length <= 1">
+                    <svg lucideTrash2 [size]="14"></svg>
+                  </button>
+                </div>
+              }
+              <button type="button" class="add-btn" (click)="addCategory('INCOME')">
+                <svg lucidePlus [size]="14"></svg> Add category
+              </button>
+            </div>
+          }
+        </section>
+      </div>
 
       <button class="btn btn-primary save-cats" (click)="saveCategories()">Save categories</button>
+
+      <section class="section budget-section">
+        <h3>Monthly Budget</h3>
+        <div class="budget-row">
+          <input class="field-input budget-input" type="number" [(ngModel)]="budgetInput" placeholder="Amount in ₹" min="0" />
+          <div class="budget-actions">
+            <button class="btn btn-primary" (click)="saveBudget()">Save</button>
+            <button class="btn" (click)="clearBudget()">Clear</button>
+          </div>
+        </div>
+      </section>
     </div>
   `,
   styles: `
     .settings {
-      max-width: 560px;
+      max-width: 1200px;
     }
     h2 {
       margin: 0 0 16px;
@@ -100,20 +110,39 @@ import { randomUUID } from '../../core/utils/uuid';
       letter-spacing: 0.03em;
       color: var(--muted);
     }
+    .categories-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    @media (min-width: 768px) {
+      .categories-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
     .section {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
-      margin-bottom: 10px;
+    }
+    .budget-section {
+      margin-top: 10px;
     }
     .budget-row {
       display: flex;
-      gap: 8px;
+      gap: 12px;
       align-items: center;
+      flex-wrap: wrap;
     }
-    .budget-row .field-input {
+    .budget-input {
       flex: 1;
+      min-width: 180px;
+    }
+    .budget-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
     }
     .collapse-header {
       display: flex;
@@ -188,23 +217,35 @@ import { randomUUID } from '../../core/utils/uuid';
       border-color: var(--accent);
       color: var(--accent);
     }
-    .save-cats { margin-top: 4px; }
+    .save-cats { margin-bottom: 10px; }
   `,
 })
 export class SettingsComponent implements OnInit {
   private configService = inject(ConfigService);
   private snackBar = inject(MatSnackBar);
+  private session = inject(SessionStateService);
+
+  uiState = this.session.sessionSignal<SettingsUiState>('settings.ui', {
+    expenseOpen: true,
+    incomeOpen: true,
+  });
 
   categories: Category[] = [];
   budgetInput: number | null = null;
-  expenseOpen = true;
-  incomeOpen = true;
 
   expenseCategories = () => this.categories.filter((c) => c.type === 'EXPENSE');
   incomeCategories = () => this.categories.filter((c) => c.type === 'INCOME');
 
   ngOnInit(): void {
     this.configService.getConfig().subscribe((config) => this.applyConfig(config));
+  }
+
+  toggleExpenseOpen(): void {
+    this.uiState.update((s) => ({ ...s, expenseOpen: !s.expenseOpen }));
+  }
+
+  toggleIncomeOpen(): void {
+    this.uiState.update((s) => ({ ...s, incomeOpen: !s.incomeOpen }));
   }
 
   private applyConfig(config: UserConfig): void {
