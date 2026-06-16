@@ -551,6 +551,8 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   editDraft = signal<EditDraft | null>(null);
   savingRow = signal(false);
 
+  private loadSeq = 0;
+
   formatINR = formatINR;
   formatDisplayDate = formatDisplayDate;
 
@@ -706,7 +708,6 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
 
   onDrawerSaved(): void {
     this.closeDrawer();
-    this.reload();
   }
 
   onSearchChange(): void {
@@ -800,7 +801,6 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
         next: () => {
           this.savingRow.set(false);
           this.cancelEdit();
-          this.reload();
         },
         error: () => this.savingRow.set(false),
       });
@@ -808,6 +808,7 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
 
   reload(): void {
     this.cancelEdit();
+    this.loadSeq++;
     this.items.set([]);
     this.nextCursor.set(null);
     this.hasMore.set(true);
@@ -820,6 +821,7 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
   }
 
   private fetchPage(): void {
+    const seq = this.loadSeq;
     this.loading.set(true);
     this.transactionService
       .list({
@@ -834,18 +836,22 @@ export class TransactionsComponent implements OnInit, AfterViewInit {
       })
       .subscribe({
         next: (res) => {
+          if (seq !== this.loadSeq) return;
           this.items.update((prev) => [...prev, ...res.items]);
           this.nextCursor.set(res.nextCursor);
           this.hasMore.set(res.hasMore);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false),
+        error: () => {
+          if (seq !== this.loadSeq) return;
+          this.loading.set(false);
+        },
       });
   }
 
   deleteTx(tx: Transaction): void {
     if (confirm('Delete this transaction?')) {
-      this.transactionService.delete(tx.id).subscribe(() => this.reload());
+      this.transactionService.delete(tx.id).subscribe();
     }
   }
 }

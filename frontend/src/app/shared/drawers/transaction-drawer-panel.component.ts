@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, input, output, signal, computed, effect } from '@angular/core';
+import { Component, inject, OnInit, input, output, signal, computed, effect, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideX } from '@lucide/angular';
 import { Category, Transaction, TransactionType } from '../../core/models';
@@ -216,22 +216,24 @@ export class TransactionDrawerPanelComponent implements OnInit {
     effect(() => {
       this.formKey();
       const tx = this.transaction();
-      if (tx) {
-        this.selectedType.set(tx.type);
-        this.selectedDate.set(tx.date.slice(0, 10));
-        this.form.patchValue({
-          amount: tx.amount,
-          type: tx.type,
-          categoryId: tx.categoryId,
-          date: tx.date.slice(0, 10),
-          description: tx.description,
-        }, { emitEvent: false });
-        if (this.categoriesReady) {
-          this.syncCategoryForCurrentType(tx.categoryId);
+      untracked(() => {
+        if (tx) {
+          this.selectedType.set(tx.type);
+          this.selectedDate.set(tx.date.slice(0, 10));
+          this.form.patchValue({
+            amount: tx.amount,
+            type: tx.type,
+            categoryId: tx.categoryId,
+            date: tx.date.slice(0, 10),
+            description: tx.description,
+          }, { emitEvent: false });
+          if (this.categoriesReady) {
+            this.syncCategoryForCurrentType(tx.categoryId);
+          }
+        } else {
+          this.resetForm();
         }
-      } else {
-        this.resetForm();
-      }
+      });
     });
 
     effect(() => {
