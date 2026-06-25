@@ -1,0 +1,1 @@
+import{o as a,p as g}from"./chunk-3P7PMUKL.js";import{R as c,T as m,h as p,n as s}from"./chunk-QMGC3PPS.js";function T(l,f,e,r){let n=r?"?"+new URLSearchParams(r).toString():"",i=`${f}:${e}${n}`;return s(a(i)).pipe(c(o=>o!==null?new p(t=>{t.next(o),t.complete()}):l.get(`${e}${n}`).pipe(m(t=>g(i,t)))))}export{T as a};
