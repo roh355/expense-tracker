@@ -22,18 +22,16 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', createAuthRouter(prisma));
 
+// Serve Angular static files (must be BEFORE authMiddleware)
+app.use(express.static(path.join(__dirname, '../public/browser')));
+app.get('/{*splat}', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../public/browser/index.html'));
+});
+
 app.use(authMiddleware);
 app.use('/api/transactions', createTransactionsRouter(prisma));
 app.use('/api/config', createConfigRouter(prisma));
 app.use('/api/analytics', createAnalyticsRouter(prisma));
-
-// Serve Angular static files
-app.use(express.static(path.join(__dirname, '../public/browser')));
-
-// Catch-all: let Angular handle routing
-app.get('/{*splat}', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/browser/index.html'));
-});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
